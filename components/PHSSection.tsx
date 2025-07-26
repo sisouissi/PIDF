@@ -183,8 +183,8 @@ export const PHSSection: React.FC = () => (
                     <InfoCard title="1. Lavage Broncho-Alvéolaire (LBA)" icon={<Lungs className="w-5 h-5"/>} color="blue">
                         <p><strong>Rôle :</strong> Outil le plus sensible pour détecter une alvéolite, mais non spécifique.</p>
                         <ul className="list-disc list-inside text-sm space-y-1 mt-2">
-                            <li><strong>Résultat clé :</strong> Une <strong>lymphocytose marquée</strong> (souvent > 30-40%) est un argument diagnostique majeur.</li>
-                            <li><strong>Limites :</strong> Peut être normale dans les formes fibrosantes chroniques ou chez les fumeurs (seuil > 20%). Peut se voir dans d'autres PID.</li>
+                            <li><strong>Résultat clé :</strong> Une <strong>lymphocytose marquée</strong> (souvent {'>'} 30-40%) est un argument diagnostique majeur.</li>
+                            <li><strong>Limites :</strong> Peut être normale dans les formes fibrosantes chroniques ou chez les fumeurs (seuil {'>'} 20%). Peut se voir dans d'autres PID.</li>
                             <li><strong>Utilité principale :</strong> Très utile pour différencier une PID fibrosante indéterminée (ex: suspicion de FPI vs PHS fibrosante).</li>
                         </ul>
                     </InfoCard>
