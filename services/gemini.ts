@@ -1,6 +1,8 @@
+import { GoogleGenAI } from "@google/genai";
 import type { PatientData } from '../components/AcrGuidelineTool/types';
 import { connectiviteTypes, riskFactors, symptoms } from '../components/AcrGuidelineTool/constants';
 import { TREATMENT_DATA, SARD_LABELS } from '../data/acr_treatment_data';
+import type { ILAAlgorithmAnswers } from '../types';
 
 // --- API for Screening Tool (Mocked) ---
 export const generateScreeningSummary = async (patientData: PatientData, riskLevel: string): Promise<string> => {
@@ -118,4 +120,86 @@ export const generateTreatmentSummary = async (sard: string, context: string): P
         summary += `**Note importante :**\n${recommendations.note}\n`;
     }
     return summary;
+};
+
+// --- API for ILA Decision Tool (Real Gemini Call) ---
+export const generateILAmanagementSummary = async (
+  answers: ILAAlgorithmAnswers,
+  recommendationTitle: string,
+  onChunk: (chunk: string) => void,
+  onDone: () => void,
+  onError: (error: Error) => void,
+  signal: AbortSignal
+) => {
+  try {
+    if (!process.env.API_KEY) {
+        throw new Error('Le service AI n\'est pas disponible: Une clé API doit être fournie.');
+    }
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    const contextMap = {
+      symptoms: 'Évaluation pour des symptômes respiratoires',
+      lcs: 'Programme de dépistage du cancer du poumon',
+      incidental: 'Découverte fortuite sur un scanner non dédié',
+      '': 'Non spécifié'
+    };
+    
+    const patientInfoMap = {
+        'history': 'Antécédents médicaux significatifs (ex: Cancer, Radiothérapie thoracique)',
+        'symptoms': 'Présence de symptômes respiratoires (Dyspnée, Toux)',
+        'sard': 'Signes de maladie rhumatismale auto-immune systémique (SARD)',
+        'family': 'Antécédents familiaux de fibrose pulmonaire',
+    };
+
+    const patientInfoText = answers.patientInfo.length > 0 ? answers.patientInfo.map(pi => patientInfoMap[pi as keyof typeof patientInfoMap]).join(', ') : 'Aucun';
+
+    const prompt = `
+Génère un plan de prise en charge clinique concis et bien structuré pour un patient présentant des Anomalies Pulmonaires Interstitielles (ILA), basé sur les recommandations de la Fleischner Society et d'autres directives pertinentes. La sortie doit être en français et utiliser le format Markdown pour la mise en forme (texte en gras avec **).
+
+**Données du patient :**
+- **Contexte du scanner :** ${contextMap[answers.context]}
+- **Antécédents pertinents du patient :** ${patientInfoText}
+- **Étendue des ILA :** ${answers.extent === '>10' ? '>10% de n\'importe quelle zone pulmonaire' : '<=10% de n\'importe quelle zone pulmonaire'}
+- **Caractéristiques fibrosantes :** ${answers.fibrotic === 'yes' ? 'Présentes' : 'Absentes'}
+- **Distribution (si non-fibrosante) :** ${answers.fibrotic === 'no' ? (answers.distribution === 'basal_peripheral' ? 'Prédominance basale et périphérique' : 'Autre') : 'N/A'}
+
+**Recommandation basée sur l'algorithme :** ${recommendationTitle}
+
+**Instructions :**
+1.  **Résumé :** Commence par un bref résumé du profil de risque du patient en fonction des données fournies.
+2.  **Rationnel :** Explique brièvement le rationnel derrière la recommandation "${recommendationTitle}", en le reliant aux caractéristiques spécifiques des ILA (fibrosante, étendue, distribution).
+3.  **Plan de prise en charge :** Fournis des étapes claires et réalisables. Cela devrait inclure :
+    -   Orientations (ex: vers la pneumologie, réunion de concertation pluridisciplinaire).
+    -   Imagerie de suivi recommandée (ex: type de scanner, calendrier).
+    -   Tests fonctionnels recommandés (ex: EFR, Test de Marche de 6 minutes).
+    -   Conseils de prise en charge générale (ex: sevrage tabagique, éducation du patient).
+4.  **Ton :** Professionnel, clinique et directif.
+
+La réponse doit être structurée et facile à lire pour un clinicien.
+`;
+    
+    const responseStream = await ai.models.generateContentStream({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+    });
+
+    if (signal.aborted) {
+        onDone();
+        return;
+    };
+    
+    for await (const chunk of responseStream) {
+        if (signal.aborted) {
+            onDone();
+            return;
+        }
+        onChunk(chunk.text);
+    }
+    
+    onDone();
+
+  } catch (error) {
+    console.error("Error generating ILA management summary:", error);
+    onError(error as Error);
+  }
 };

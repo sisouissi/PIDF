@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, Lungs, Search, Stethoscope, ListChecks, Pill, TrendingUp, Image, Activity, FlaskConical, Microscope, ClipboardCheck, AlertTriangle, FileMedical, ClipboardList, BrainCircuit, Wind } from './components/icons';
+import { Home, Lungs, Search, Stethoscope, ListChecks, Pill, TrendingUp, Image, Activity, FlaskConical, Microscope, ClipboardCheck, AlertTriangle, FileMedical, ClipboardList, BrainCircuit, Wind, ClipboardPlus } from './components/icons';
 import { MenuItem } from './types';
 
 export const MENU_ITEMS: MenuItem[] = [
@@ -49,6 +49,11 @@ export const MENU_ITEMS: MenuItem[] = [
     id: 'phs',
     title: "Pneumopathies d'hypersensibilité (PHS)",
     icon: Wind
+  },
+  {
+    id: 'ila',
+    title: 'Anomalies Pulmonaires Interstitielles (ILA)',
+    icon: ClipboardPlus
   },
   { 
     id: 'autres-pid', 

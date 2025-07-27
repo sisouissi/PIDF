@@ -19,7 +19,7 @@ export const references: Reference[] = [
     year: 2025,
     volume: '35',
     pages: '2245',
-    urls: ['https://link.springer.com/article/10.1007/s00330-024-10245-5']
+    urls: ['https://link.springer.com/article/10.1007/s00330-024-11054-2']
   },
   {
     id: 'liu2025',
@@ -63,6 +63,16 @@ export const references: Reference[] = [
     urls: ['https://archivesofrheumatology.org/full-text/1555']
   },
   // 2023
+  {
+    id: 'patel2023ila',
+    title: 'Interstitial lung abnormalities: do symptoms matter?',
+    authors: 'Patel AS.',
+    journal: 'ERJ Open Res',
+    year: 2023,
+    volume: '9',
+    pages: '00502-2023',
+    urls: ['https://publications.ersnet.org/content/erjor/9/5/00502-2023']
+  },
   {
     id: 'shakeel2023',
     title: 'Idiopathic pulmonary fibrosis: Pathophysiology, cellular signaling, diagnostic and therapeutic approaches.',
@@ -161,6 +171,16 @@ export const references: Reference[] = [
   },
   // 2021
   {
+    id: 'chae2021ila',
+    title: 'Interstitial Lung Abnormalities: What Radiologists Should Know',
+    authors: 'Chae KJ, Jin GY, Goo JM, Chung MJ.',
+    journal: 'Korean J Radiol',
+    year: 2021,
+    volume: '22(3)',
+    pages: '454-463',
+    urls: ['https://kjronline.org/DOIx.php?id=10.3348/kjr.2020.0191']
+  },
+  {
     id: 'spagnolo2021',
     title: 'Mechanisms of progressive fibrosis in connective tissue disease (CTD)-associated interstitial lung diseases (ILDs).',
     authors: 'Spagnolo P, Distler O, Ryerson CJ, et al.',
@@ -231,6 +251,16 @@ export const references: Reference[] = [
     urls: ['https://publications.ersnet.org/content/errev/30/162/210177']
   },
   // 2020
+  {
+    id: 'walsh2020ila',
+    title: 'Interstitial lung abnormalities: An update for the clinician',
+    authors: 'Walsh SLF, Devaraj A, Enghelmayer JI, et al.',
+    journal: 'Respirology',
+    year: 2020,
+    volume: '25',
+    pages: '698-706',
+    urls: ['https://onlinelibrary.wiley.com/doi/10.1111/resp.13700']
+  },
   {
     id: 'fukihara2020',
     title: 'Probable usual interstitial pneumonia pattern on chest CT: is it sufficient for a diagnosis of idiopathic pulmonary fibrosis?',
