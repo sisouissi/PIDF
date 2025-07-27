@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { TREATMENT_DATA, SARD_LABELS } from '../data/acr_treatment_data';
 import { Pill, CheckCircle, XCircle, AlertTriangle } from './icons';
 import { generateTreatmentSummary } from '../services/gemini';
@@ -35,6 +36,13 @@ export const AcrTreatmentTool: React.FC = () => {
     const [aiSummary, setAiSummary] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [summaryError, setSummaryError] = useState<string | null>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    useEffect(() => {
+        return () => {
+            abortControllerRef.current?.abort();
+        };
+    }, []);
 
     const recommendations = TREATMENT_DATA[context][sard] || TREATMENT_DATA[context]['Autre'];
     
@@ -42,13 +50,35 @@ export const AcrTreatmentTool: React.FC = () => {
         setIsGenerating(true);
         setAiSummary('');
         setSummaryError(null);
+        
+        abortControllerRef.current?.abort();
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+        
         try {
-            const summary = await generateTreatmentSummary(sard, context);
-            setAiSummary(summary);
+            await generateTreatmentSummary(
+                sard, 
+                context,
+                (chunk) => setAiSummary(prev => prev + chunk),
+                () => {
+                    setIsGenerating(false);
+                    abortControllerRef.current = null;
+                },
+                (error) => {
+                    if (error.name !== 'AbortError') {
+                        setSummaryError(error.message);
+                    }
+                    setIsGenerating(false);
+                    abortControllerRef.current = null;
+                },
+                controller.signal
+            );
         } catch (e) {
-            setSummaryError(e instanceof Error ? e.message : "Une erreur inconnue est survenue.");
-        } finally {
+            if ((e as Error).name !== 'AbortError') {
+                setSummaryError(e instanceof Error ? e.message : "Une erreur inconnue est survenue.");
+            }
             setIsGenerating(false);
+            abortControllerRef.current = null;
         }
     }, [sard, context]);
 

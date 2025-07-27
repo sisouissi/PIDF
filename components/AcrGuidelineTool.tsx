@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, Stethoscope, Activity, Heart, XCircle, Search } from './icons';
 import { generateScreeningSummary } from '../services/gemini';
 import { AISummary } from './AcrGuidelineTool/components/AISummary';
@@ -65,6 +65,13 @@ export const AcrScreeningTool: React.FC = () => {
     const [aiSummary, setAiSummary] = useState('');
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const [summaryError, setSummaryError] = useState<string | null>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    useEffect(() => {
+        return () => {
+            abortControllerRef.current?.abort();
+        };
+    }, []);
 
     const riskLevel = useMemo(() => getRiskLevel(patientData), [patientData]);
 
@@ -86,19 +93,42 @@ export const AcrScreeningTool: React.FC = () => {
         setAiSummary('');
         setSummaryError(null);
         setStep('patient-info');
+        abortControllerRef.current?.abort();
     };
 
     const handleGenerateSummary = useCallback(async () => {
         setIsGeneratingSummary(true);
         setAiSummary('');
         setSummaryError(null);
+        
+        abortControllerRef.current?.abort();
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         try {
-            const summary = await generateScreeningSummary(patientData, riskLevel.level);
-            setAiSummary(summary);
+            await generateScreeningSummary(
+                patientData, 
+                riskLevel.level,
+                (chunk) => setAiSummary(prev => prev + chunk),
+                () => {
+                    setIsGeneratingSummary(false);
+                    abortControllerRef.current = null;
+                },
+                (error) => {
+                    if (error.name !== 'AbortError') {
+                        setSummaryError(error.message);
+                    }
+                    setIsGeneratingSummary(false);
+                    abortControllerRef.current = null;
+                },
+                controller.signal
+            );
         } catch (e) {
-            setSummaryError(e instanceof Error ? e.message : "Une erreur inconnue est survenue.");
-        } finally {
+             if ((e as Error).name !== 'AbortError') {
+                setSummaryError(e instanceof Error ? e.message : "Une erreur inconnue est survenue.");
+            }
             setIsGeneratingSummary(false);
+            abortControllerRef.current = null;
         }
     }, [patientData, riskLevel]);
 
