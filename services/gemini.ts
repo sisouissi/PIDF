@@ -60,8 +60,18 @@ export const generateScreeningSummary = async (
     signal: AbortSignal
 ) => {
     const connectiviteLabel = connectiviteTypes.find(c => c.value === patientData.connectiviteType)?.label || patientData.connectiviteType;
-    const riskFactorsList = patientData.riskFactors.length > 0 ? patientData.riskFactors.map(rf => riskFactors.find(r => r.value === rf)?.label).join(', ') : 'aucun';
-    const symptomsList = patientData.currentSymptoms.length > 0 ? patientData.currentSymptoms.map(s => symptoms.find(sym => sym.value === s)?.label).join(', ') : 'aucun';
+    const riskFactorsList = patientData.riskFactors.length > 0
+        ? patientData.riskFactors
+            .map(rf => riskFactors.find(r => r.value === rf)?.label)
+            .filter(Boolean)
+            .join(', ')
+        : 'aucun';
+    const symptomsList = patientData.currentSymptoms.length > 0
+        ? patientData.currentSymptoms
+            .map(s => symptoms.find(sym => sym.value === s)?.label)
+            .filter(Boolean)
+            .join(', ')
+        : 'aucun';
 
     const prompt = `
 Génère une synthèse clinique concise pour un patient avec les caractéristiques suivantes :
@@ -147,7 +157,12 @@ export const generateILAmanagementSummary = async (
         'family': 'Antécédents familiaux de fibrose pulmonaire',
     };
 
-    const patientInfoText = answers.patientInfo.length > 0 ? answers.patientInfo.map(pi => patientInfoMap[pi as keyof typeof patientInfoMap]).join(', ') : 'Aucun';
+    const patientInfoText = answers.patientInfo.length > 0
+        ? answers.patientInfo
+            .map(pi => patientInfoMap[pi as keyof typeof patientInfoMap])
+            .filter(Boolean)
+            .join(', ')
+        : 'Aucun';
 
     const prompt = `
 Génère un plan de prise en charge clinique concis et bien structuré pour un patient présentant des Anomalies Pulmonaires Interstitielles (ILA), basé sur les recommandations de la Fleischner Society et d'autres directives pertinentes. La sortie doit être en français et utiliser le format Markdown (titres avec ###, gras avec **).
