@@ -22,6 +22,7 @@ import SuiviPronosticSection from './SuiviPronosticSection';
 import IPAFSection from './IPAFSection';
 import PHSSection from './PHSSection';
 import FPPSection from './FPPSection';
+import ILASection from './ILASection';
 
 interface ContentAreaProps {
   activeSection: SectionId;
@@ -43,6 +44,7 @@ const sectionComponents: Record<string, React.FC<any>> = {
   'ipaf': IPAFSection,
   'pins-fibrosantes': PINSSection,
   'phs': PHSSection,
+  'ila': ILASection,
   'autres-pid': AutresPIDSection,
   therapeutique: TherapeutiqueSection,
   'suivi-pronostic': SuiviPronosticSection,
