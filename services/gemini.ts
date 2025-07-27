@@ -132,10 +132,11 @@ export const generateILAmanagementSummary = async (
   signal: AbortSignal
 ) => {
   try {
-    if (!process.env.API_KEY) {
-        throw new Error('Le service AI n\'est pas disponible: Une clé API doit être fournie.');
+    // Vercel requires environment variables to be prefixed with VITE_ to be exposed to the browser.
+    if (!process.env.VITE_API_KEY) {
+        throw new Error("Le service AI n'est pas disponible: La variable d'environnement VITE_API_KEY doit être configurée.");
     }
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.VITE_API_KEY });
 
     const contextMap = {
       symptoms: 'Évaluation pour des symptômes respiratoires',
