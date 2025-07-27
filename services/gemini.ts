@@ -1,19 +1,11 @@
 
-import { GoogleGenAI } from "@google/genai";
 import type { PatientData } from '../components/AcrGuidelineTool/types';
 import { connectiviteTypes, riskFactors, symptoms } from '../components/AcrGuidelineTool/constants';
 import { TREATMENT_DATA, SARD_LABELS } from '../data/acr_treatment_data';
 import type { ILAAlgorithmAnswers } from '../types';
 
-const getApiKey = () => {
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) {
-        throw new Error("Le service AI n'est pas disponible: La variable d'environnement API_KEY doit être configurée.");
-    }
-    return apiKey;
-};
 
-// --- Common function for streaming generation ---
+// --- Common function for streaming generation via our secure API route ---
 const generateContentStreamWithCallbacks = async (
     prompt: string,
     onChunk: (chunk: string) => void,
@@ -22,35 +14,59 @@ const generateContentStreamWithCallbacks = async (
     signal: AbortSignal
 ) => {
     try {
-        const apiKey = getApiKey();
-        const ai = new GoogleGenAI({ apiKey });
-
-        const responseStream = await ai.models.generateContentStream({
-            model: "gemini-2.5-flash",
-            contents: prompt,
+        const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prompt }),
+            signal,
         });
 
-        if (signal.aborted) {
-            onDone();
-            return;
+        if (!response.ok) {
+            const errorJson = await response.json().catch(() => null);
+            if (errorJson && errorJson.error) {
+                throw new Error(errorJson.error);
+            }
+            throw new Error(`Erreur de communication avec le serveur: ${response.status}`);
         }
 
-        for await (const chunk of responseStream) {
-            if (signal.aborted) break;
-            onChunk(chunk.text);
+        if (!response.body) {
+            throw new Error("La réponse du serveur est vide.");
         }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        const readStream = async () => {
+             while (true) {
+                if (signal.aborted) {
+                    await reader.cancel();
+                    break;
+                }
+                const { done, value } = await reader.read();
+                if (done) {
+                    onDone();
+                    break;
+                }
+                onChunk(decoder.decode(value));
+            }
+        };
+
+        await readStream();
 
     } catch (error) {
-        console.error("Error in generateContentStreamWithCallbacks:", error);
-        onError(error as Error);
-    } finally {
-        if (!signal.aborted) {
-          onDone();
+        console.error("Erreur lors de l'appel à /api/generate:", error);
+        if ((error as Error).name !== 'AbortError') {
+            onError(error as Error);
+        } else {
+            console.log('Request was aborted by the user.');
+            onDone();
         }
     }
 };
 
-// --- API for Screening Tool (REAL Gemini Call) ---
+// --- API for Screening Tool (now uses API route) ---
 export const generateScreeningSummary = async (
     patientData: PatientData, 
     riskLevel: string,
@@ -92,7 +108,7 @@ La synthèse doit commencer par une phrase résumant le profil du patient. Ensui
     await generateContentStreamWithCallbacks(prompt, onChunk, onDone, onError, signal);
 };
 
-// --- API for Treatment Tool (REAL Gemini Call) ---
+// --- API for Treatment Tool (now uses API route) ---
 export const generateTreatmentSummary = async (
     sard: string, 
     context: string,
@@ -134,7 +150,7 @@ Génère une synthèse de la stratégie thérapeutique pour un patient atteint d
     await generateContentStreamWithCallbacks(prompt, onChunk, onDone, onError, signal);
 };
 
-// --- API for ILA Decision Tool (Real Gemini Call) ---
+// --- API for ILA Decision Tool (now uses API route) ---
 export const generateILAmanagementSummary = async (
   answers: ILAAlgorithmAnswers,
   recommendationTitle: string,
